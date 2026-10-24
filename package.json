@@ -18,6 +18,12 @@
       "title": "Screenshot X Post",
       "description": "Render the X post in the active browser tab as an image and copy it to the clipboard",
       "mode": "no-view"
+    },
+    {
+      "name": "open-screenshot-folder",
+      "title": "Open X Screenshot Folder",
+      "description": "Open the folder holding your saved X post screenshots",
+      "mode": "no-view"
     }
   ],
   "preferences": [
@@ -29,15 +35,24 @@
       "required": false,
       "default": "dark",
       "data": [
-        { "title": "Dark", "value": "dark" },
-        { "title": "Dim", "value": "dim" },
-        { "title": "Light", "value": "light" }
+        {
+          "title": "Dark",
+          "value": "dark"
+        },
+        {
+          "title": "Dim",
+          "value": "dim"
+        },
+        {
+          "title": "Light",
+          "value": "light"
+        }
       ]
     },
     {
       "name": "saveFolder",
       "title": "Save Folder",
-      "description": "Also save each screenshot as a PNG here; empty keeps it on the clipboard only",
+      "description": "Where screenshots are saved as PNG; empty uses Pictures/X Post Screenshots",
       "type": "directory",
       "required": false
     }

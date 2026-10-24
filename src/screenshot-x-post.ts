@@ -1,10 +1,11 @@
 import { execFile } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { promisify } from "node:util";
 
 import { BrowserExtension, Toast, environment, getPreferenceValues, showHUD, showToast } from "@raycast/api";
 
+import { screenshotFolder } from "./folder.ts";
 import type { Theme } from "./card-page.ts";
 import { renderPost } from "./capture.ts";
 
@@ -28,7 +29,8 @@ export default async function main() {
       throw new Error("Install Raycast's browser extension, then try again.");
     }
     const tab = (await BrowserExtension.getTabs()).find((t) => t.active && POST_URL.test(t.url));
-    const id = tab && POST_URL.exec(tab.url)?.[2];
+    const match = tab && POST_URL.exec(tab.url);
+    const [handle, id] = match ? [match[1], match[2]] : [];
     if (!tab || !id) throw new Error("The active browser tab is not an X post.");
 
     const html = await BrowserExtension.getContent({ tabId: tab.id, format: "html" });
@@ -39,12 +41,13 @@ export default async function main() {
       cacheDir: environment.supportPath,
     });
 
-    const file = join(saveFolder || environment.supportPath, `x-post-${id}.png`);
-    await mkdir(join(file, ".."), { recursive: true });
+    const folder = screenshotFolder(saveFolder);
+    const file = join(folder, `x-${handle}-${id}.png`);
+    await mkdir(folder, { recursive: true });
     await writeFile(file, png);
     await run("osascript", [...COPY_IMAGE, file]);
 
-    await showHUD("Copied X post screenshot");
+    await showHUD(`Copied to clipboard and saved in ${basename(folder)}`);
   } catch (error) {
     await showToast({
       style: Toast.Style.Failure,
