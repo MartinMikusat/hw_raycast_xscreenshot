@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { buildCardPage, PAGE_WIDTH, type Theme } from "./card-page.ts";
+import { buildCardPage, PAGE_WIDTH, type FocalPost, type Theme } from "./card-page.ts";
 
 const run = promisify(execFile);
 
@@ -38,13 +38,13 @@ async function compiled({ source, cacheDir }: Renderer): Promise<string> {
   return binary;
 }
 
-export async function renderPost(postHtml: string, theme: Theme, renderer: Renderer): Promise<Buffer> {
+export async function renderPost(pageHtml: string, theme: Theme, focal: FocalPost, renderer: Renderer): Promise<Buffer> {
   const binary = await compiled(renderer);
   const dir = await mkdtemp(join(tmpdir(), "x-screenshot-"));
   try {
     const page = join(dir, "card.html");
     const png = join(dir, "card.png");
-    await writeFile(page, buildCardPage(postHtml, theme));
+    await writeFile(page, buildCardPage(pageHtml, theme, focal));
     await run(binary, [page, png, String(PAGE_WIDTH)], { timeout: RENDER_TIMEOUT_MS });
     return await readFile(png);
   } catch (error) {

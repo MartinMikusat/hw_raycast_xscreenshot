@@ -5,19 +5,26 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderPost } from "../src/capture.ts";
 
-const html = await readFile(new URL("../fixtures/post.html", import.meta.url), "utf8");
 const renderer = {
   source: fileURLToPath(new URL("../assets/render.swift", import.meta.url)),
   cacheDir: join(tmpdir(), "x-screenshot-check-cache"),
 };
 
-for (const theme of ["dark", "light"]) {
-  const png = await renderPost(html, theme, renderer);
+const cases = [
+  { name: "post", id: "2113453507793592715", theme: "dark", minHeight: 300 },
+  { name: "post", id: "2113453507793592715", theme: "light", minHeight: 300 },
+  { name: "thread", id: "2113562022839505343", theme: "dark", minHeight: 400 },
+  { name: "quote", id: "2113877257613947348", theme: "dim", minHeight: 500 },
+];
+
+for (const { name, id, theme, minHeight } of cases) {
+  const html = await readFile(new URL(`../fixtures/${name}.html`, import.meta.url), "utf8");
+  const png = await renderPost(html, theme, { id }, renderer);
   assert.equal(png.subarray(1, 4).toString(), "PNG", "not a PNG");
   const [width, height] = [png.readUInt32BE(16), png.readUInt32BE(20)];
-  assert.ok(width >= 656, `unexpected width ${width}`);
-  assert.ok(height > 300, `card too short: ${height}`);
-  const out = join(tmpdir(), `x-screenshot-check-${theme}.png`);
+  assert.ok(width >= 656, `${name}: unexpected width ${width}`);
+  assert.ok(height > minHeight, `${name}: card too short: ${height}`);
+  const out = join(tmpdir(), `x-screenshot-check-${name}-${theme}.png`);
   await writeFile(out, png);
-  console.log(`OK - ${theme}: ${width}x${height} ${out}`);
+  console.log(`OK - ${name}/${theme}: ${width}x${height} ${out}`);
 }

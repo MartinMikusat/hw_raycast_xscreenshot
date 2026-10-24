@@ -10,7 +10,7 @@ import { renderPost } from "./capture.ts";
 
 const run = promisify(execFile);
 
-const POST_URL = /^https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/(?:[^/?#]+\/)+status\/(\d+)/;
+const POST_URL = /^https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/([^/?#]+)\/status\/(\d+)/;
 const COPY_IMAGE = [
   "-e",
   "on run argv",
@@ -28,18 +28,13 @@ export default async function main() {
       throw new Error("Install Raycast's browser extension, then try again.");
     }
     const tab = (await BrowserExtension.getTabs()).find((t) => t.active && POST_URL.test(t.url));
-    const id = tab && POST_URL.exec(tab.url)?.[1];
+    const id = tab && POST_URL.exec(tab.url)?.[2];
     if (!tab || !id) throw new Error("The active browser tab is not an X post.");
 
-    const html =
-      (await BrowserExtension.getContent({
-        tabId: tab.id,
-        format: "html",
-        cssSelector: `article:has(a[href$="/status/${id}"])`,
-      })) || (await BrowserExtension.getContent({ tabId: tab.id, format: "html", cssSelector: "article" }));
-    if (!html) throw new Error("No post found on the page yet. Wait for it to load.");
+    const html = await BrowserExtension.getContent({ tabId: tab.id, format: "html" });
+    if (!html.includes("<article")) throw new Error("No post found on the page yet. Wait for it to load.");
 
-    const png = await renderPost(html, theme as Theme, {
+    const png = await renderPost(html, theme as Theme, { id }, {
       source: join(environment.assetsPath, "render.swift"),
       cacheDir: environment.supportPath,
     });

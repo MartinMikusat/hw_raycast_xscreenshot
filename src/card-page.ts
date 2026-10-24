@@ -23,11 +23,28 @@ body{width:${PAGE_WIDTH}px;font-family:-apple-system,BlinkMacSystemFont,"Helveti
 .media.n1{grid-template-columns:1fr}
 .m{position:relative;min-height:0;background:var(--border)}
 .m img{display:block;width:100%;object-fit:cover}
+.media.n1 .m img{max-height:520px}
 .media:not(.n1) .m img{height:240px}
 .media.n3 .m:first-child{grid-row:span 2}
 .media.n3 .m:first-child img{height:482px}
 .play{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(0,0,0,.6);border:3px solid #fff}
 .play::after{content:"";position:absolute;left:25px;top:18px;border-style:solid;border-width:12px 0 12px 20px;border-color:transparent transparent transparent #fff}
+.parent{display:flex;gap:12px}
+.pcol{display:flex;flex-direction:column;align-items:center;flex:none}
+.line{flex:1;width:2px;margin:4px 0;background:var(--border)}
+.pbody{min-width:0;flex:1;padding-bottom:20px}
+.ptop{display:flex;align-items:baseline;gap:6px;font-size:15px;white-space:nowrap}
+.pname{font-size:16px}
+.parent .text{margin-top:4px;font-size:18px}
+.parent .media{margin-top:10px}
+.quote{margin-top:14px;padding:12px 14px;border:1px solid var(--border);border-radius:16px}
+.qhead{display:flex;align-items:center;gap:6px;font-size:15px;white-space:nowrap}
+.qavatar{width:22px;height:22px;border-radius:50%;background:var(--border);object-fit:cover}
+.qname{display:flex;align-items:center;gap:3px;font-weight:700}
+.qname svg{width:15px;height:15px}
+.qhandle{color:var(--sec)}
+.quote .text{margin-top:6px;font-size:17px}
+.quote .media{margin-top:10px;border-radius:12px}
 .meta{margin-top:16px;color:var(--sec);font-size:15px}
 .meta b{color:var(--fg);font-weight:700}
 .stats{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px 20px;color:var(--sec);font-size:15px}
@@ -46,10 +63,12 @@ const CLIENT = `
 (function () {
   try {
   var SRC = __SRC__;
+  var FOCAL = __FOCAL__;
   var STATS = __STATS__;
   var CHECK = __CHECK__;
+  var MAX_PARENTS = 4;
   var doc = new DOMParser().parseFromString(SRC, "text/html");
-  var art = doc.querySelector("article") || doc.body;
+  Array.prototype.forEach.call(doc.querySelectorAll("script, style"), function (n) { n.remove(); });
   function el(tag, cls, text) {
     var e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -57,82 +76,170 @@ const CLIENT = `
     return e;
   }
   function attr(n, a) { return n.getAttribute(a) || ""; }
-
-  var avatar = Array.prototype.find.call(art.querySelectorAll("img"), function (i) { return /profile_images/.test(attr(i, "src")); });
-  var handle = "";
-  if (avatar && attr(avatar, "alt").charAt(0) === "@") handle = attr(avatar, "alt").slice(1);
-  if (!handle) {
-    var first = art.querySelector('a[href^="/"]');
-    handle = first ? attr(first, "href").split("/")[1] : "";
+  function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+  function own(art, sel) {
+    return Array.prototype.filter.call(art.querySelectorAll(sel), function (e) { return e.closest("article") === art; });
   }
-  var name = "";
-  Array.prototype.forEach.call(art.querySelectorAll("a"), function (a) {
-    var t = a.textContent.trim();
-    if (!name && attr(a, "href") === "/" + handle && t && t.charAt(0) !== "@") name = t;
-  });
-  if (!handle || !name) throw new Error("author not found");
+  function inCard(n, art) {
+    var r = n.closest('[role="link"]');
+    return !!r && r !== art && art.contains(r);
+  }
 
-  var card = document.getElementById("card");
-  var head = el("div", "head");
-  if (avatar) {
-    var av = el("img", "avatar");
-    av.src = attr(avatar, "src").replace(/_(normal|x96|bigger|reasonably_small|mini)\\./, "_400x400.");
+  function info(art) {
+    var avatar = own(art, "img").find(function (i) { return /profile_images/.test(attr(i, "src")) && attr(i, "alt").charAt(0) === "@"; });
+    var handle = avatar ? attr(avatar, "alt").slice(1) : "";
+    if (!handle) {
+      var first = own(art, 'a[href^="/"]')[0];
+      handle = first ? attr(first, "href").split("/")[1] : "";
+    }
+    var name = "";
+    own(art, "a").forEach(function (a) {
+      var t = a.textContent.trim();
+      if (!name && attr(a, "href") === "/" + handle && t && t.charAt(0) !== "@") name = t;
+    });
+    var seen = {};
+    var media = [];
+    own(art, "img, video").forEach(function (m) {
+      var video = m.nodeName === "VIDEO";
+      var src = video ? attr(m, "poster") : attr(m, "src");
+      if (!/^https:\\/\\/pbs\\.twimg\\.com\\/(media|card_img|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\\//.test(src) || seen[src]) return;
+      seen[src] = true;
+      media.push({ src: src.replace(/name=[a-z0-9]+/, "name=large"), video: video || /video_thumb/.test(src) });
+    });
+    var links = own(art, 'a[href*="/status/"]').filter(function (a) { return !inCard(a, art) && a.textContent.trim(); });
+    var id = "";
+    links.concat(own(art, 'a[href*="/status/"]')).some(function (a) {
+      var m = /^\\/([^/]+)\\/status\\/(\\d+)$/.exec(attr(a, "href"));
+      if (m && m[1].toLowerCase() === handle.toLowerCase() && !inCard(a, art)) { id = m[2]; return true; }
+      return false;
+    });
+    return {
+      art: art,
+      id: id,
+      handle: handle,
+      name: name,
+      avatar: avatar ? attr(avatar, "src").replace(/_(normal|x96|bigger|reasonably_small|mini)\\./, "_400x400.") : "",
+      verified: own(art, '[aria-label*="erified" i], [data-testid="icon-verified"]').length > 0,
+      text: own(art, '[data-testid="tweetText"], .whitespace-pre-wrap')[0],
+      media: media,
+      links: links,
+      quote: Array.prototype.find.call(art.querySelectorAll("article"), function (q) { return q.parentElement.closest("article") === art; })
+    };
+  }
+
+  function avatarEl(i, cls) {
+    var av = el("img", cls);
+    if (i.avatar) av.src = i.avatar;
     av.onerror = function () { av.removeAttribute("src"); };
-    head.appendChild(av);
+    return av;
   }
-  var who = el("div", "who");
-  var nm = el("div", "name");
-  nm.appendChild(el("span", "", name));
-  if (art.querySelector('[aria-label*="erified" i], [data-testid="icon-verified"]')) {
-    var badge = el("span");
-    badge.innerHTML = CHECK;
-    nm.appendChild(badge);
+  function nameEl(i, cls) {
+    var nm = el("div", cls);
+    nm.appendChild(el("span", "", i.name || i.handle));
+    if (i.verified) {
+      var badge = el("span");
+      badge.innerHTML = CHECK;
+      nm.appendChild(badge);
+    }
+    return nm;
   }
-  who.appendChild(nm);
-  who.appendChild(el("div", "handle", "@" + handle));
-  head.appendChild(who);
-  card.appendChild(head);
-
-  var body = art.querySelector('[data-testid="tweetText"], .whitespace-pre-wrap');
-  if (body) {
+  function whenOf(i) {
+    var l = i.links.find(function (a) { return !/Views?\\s*$/.test(a.textContent); });
+    return l ? l.textContent.trim() : "";
+  }
+  function textEl(i) {
     var text = el("div", "text");
     (function walk(n, parent) {
-      Array.prototype.forEach.call(n.childNodes, function (c) {
+      each(n.childNodes, function (c) {
         if (c.nodeType === 3) parent.append(c.textContent);
         else if (c.nodeName === "BR") parent.append("\\n");
         else if (c.nodeName === "IMG") parent.append(attr(c, "alt"));
         else if (c.nodeName === "A") { var s = el("span", "link"); walk(c, s); parent.append(s); }
         else walk(c, parent);
       });
-    })(body, text);
-    card.appendChild(text);
+    })(i.text, text);
+    return text;
+  }
+  function body(box, i) {
+    if (i.text) box.appendChild(textEl(i));
+    if (i.media.length) {
+      var grid = el("div", "media n" + Math.min(i.media.length, 4));
+      i.media.slice(0, 4).forEach(function (m) {
+        var cell = el("div", "m");
+        var img = el("img");
+        img.src = m.src;
+        cell.appendChild(img);
+        if (m.video) cell.appendChild(el("div", "play"));
+        grid.appendChild(cell);
+      });
+      box.appendChild(grid);
+    }
+    if (i.quote) {
+      var q = info(i.quote);
+      var card = el("div", "quote");
+      var qh = el("div", "qhead");
+      qh.appendChild(avatarEl(q, "qavatar"));
+      qh.appendChild(nameEl(q, "qname"));
+      qh.appendChild(el("span", "qhandle", "@" + q.handle));
+      var qw = whenOf(q);
+      if (qw) qh.appendChild(el("span", "qhandle", "\\u00b7 " + qw));
+      card.appendChild(qh);
+      body(card, q);
+      box.appendChild(card);
+    }
   }
 
-  var seen = {};
-  var media = [];
-  Array.prototype.forEach.call(art.querySelectorAll("img, video"), function (m) {
-    var video = m.nodeName === "VIDEO";
-    var src = video ? attr(m, "poster") : attr(m, "src");
-    if (!/^https:\\/\\/pbs\\.twimg\\.com\\/(media|card_img|ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\\//.test(src) || seen[src]) return;
-    seen[src] = true;
-    media.push({ src: src.replace(/name=[a-z0-9]+/, "name=large"), video: video || /video_thumb/.test(src) });
+  var tops = Array.prototype.filter.call(doc.querySelectorAll("article"), function (a) { return !a.parentElement.closest("article"); });
+  var posts = tops.map(info);
+  var focalIndex = -1;
+  posts.forEach(function (p, n) {
+    if (p.id === FOCAL.id) focalIndex = n;
   });
-  if (media.length) {
-    var grid = el("div", "media n" + Math.min(media.length, 4));
-    media.slice(0, 4).forEach(function (m) {
-      var cell = el("div", "m");
-      var img = el("img");
-      img.src = m.src;
-      cell.appendChild(img);
-      if (m.video) cell.appendChild(el("div", "play"));
-      grid.appendChild(cell);
-    });
-    card.appendChild(grid);
-  }
+  if (focalIndex < 0) focalIndex = 0;
+  var focal = posts[focalIndex];
+  if (!focal) throw new Error("post not found");
+  if (!focal.handle || !focal.name) throw new Error("author not found");
 
-  var links = Array.prototype.filter.call(art.querySelectorAll('a[href*="/status/"]'), function (a) { return a.textContent.trim(); });
-  var when = links.find(function (a) { return !/Views?\\s*$/.test(a.textContent); });
-  var views = links.find(function (a) { return /Views?\\s*$/.test(a.textContent); });
+  var parents = [];
+  var taken = {};
+  posts.slice(0, focalIndex).forEach(function (p) {
+    if (!p.id || p.id === focal.id || !p.handle) return;
+    if (taken[p.id]) parents.splice(parents.indexOf(taken[p.id]), 1);
+    taken[p.id] = p;
+    parents.push(p);
+  });
+
+  var card = document.getElementById("card");
+  parents.slice(-MAX_PARENTS).forEach(function (p) {
+    var row = el("div", "parent");
+    var col = el("div", "pcol");
+    col.appendChild(avatarEl(p, "avatar"));
+    col.appendChild(el("div", "line"));
+    var main = el("div", "pbody");
+    var top = el("div", "ptop");
+    top.appendChild(nameEl(p, "name pname"));
+    top.appendChild(el("span", "handle", "@" + p.handle));
+    var pw = whenOf(p);
+    if (pw) top.appendChild(el("span", "handle", "\\u00b7 " + pw));
+    main.appendChild(top);
+    body(main, p);
+    row.appendChild(col);
+    row.appendChild(main);
+    card.appendChild(row);
+  });
+
+  var post = el("div", "focal");
+  var head = el("div", "head");
+  head.appendChild(avatarEl(focal, "avatar"));
+  var who = el("div", "who");
+  who.appendChild(nameEl(focal, "name"));
+  who.appendChild(el("div", "handle", "@" + focal.handle));
+  head.appendChild(who);
+  post.appendChild(head);
+  body(post, focal);
+
+  var when = focal.links.find(function (a) { return !/Views?\\s*$/.test(a.textContent); });
+  var views = focal.links.find(function (a) { return /Views?\\s*$/.test(a.textContent); });
   if (when || views) {
     var meta = el("div", "meta");
     if (when) meta.append(when.textContent.trim());
@@ -140,15 +247,14 @@ const CLIENT = `
       var parts = Array.prototype.map.call(views.querySelectorAll("div"), function (d) { return d.textContent.trim(); });
       var label = parts.length ? parts : [views.textContent.trim()];
       if (when) meta.append(" \\u00b7 ");
-      var b = el("b", "", label[0]);
-      meta.appendChild(b);
+      meta.appendChild(el("b", "", label[0]));
       if (label[1]) meta.append(" " + label[1]);
     }
-    card.appendChild(meta);
+    post.appendChild(meta);
   }
 
   var stats = el("div", "stats");
-  Array.prototype.forEach.call(art.querySelectorAll("[data-engagement-action]"), function (a) {
+  own(focal.art, "[data-engagement-action]").forEach(function (a) {
     var label = STATS[attr(a, "data-engagement-action")];
     var count = a.querySelector(".x-animated-count-visual");
     if (label && count && count.textContent.trim()) {
@@ -159,7 +265,7 @@ const CLIENT = `
     }
   });
   if (!stats.children.length) {
-    var group = art.querySelector('[role="group"][aria-label]');
+    var group = own(focal.art, '[role="group"][aria-label]')[0];
     if (group) attr(group, "aria-label").split(/,\\s*/).forEach(function (part) {
       var m = /^([\\d.,KM]+)\\s+(.+)$/.exec(part);
       if (!m) return;
@@ -169,10 +275,10 @@ const CLIENT = `
       stats.appendChild(s);
     });
   }
-  if (stats.children.length) card.appendChild(stats);
+  if (stats.children.length) post.appendChild(stats);
+  card.appendChild(post);
 
-  var imgs = Array.prototype.slice.call(document.images);
-  Promise.all(imgs.map(function (i) {
+  Promise.all(Array.prototype.map.call(document.images, function (i) {
     return i.complete ? null : new Promise(function (r) { i.addEventListener("load", r); i.addEventListener("error", r); });
   })).then(function () {
     document.body.setAttribute("data-h", String(document.querySelector(".stage").offsetHeight));
@@ -183,9 +289,14 @@ const CLIENT = `
 })();
 `;
 
-export function buildCardPage(postHtml: string, theme: Theme): string {
+export interface FocalPost {
+  id: string;
+}
+
+export function buildCardPage(pageHtml: string, theme: Theme, focal: FocalPost): string {
   const json = (v: unknown) => JSON.stringify(v).replace(/</g, "\\u003c");
-  const script = CLIENT.replace("__SRC__", () => json(postHtml))
+  const script = CLIENT.replace("__SRC__", () => json(pageHtml))
+    .replace("__FOCAL__", () => json(focal))
     .replace("__STATS__", () => json(STATS))
     .replace("__CHECK__", () => json(CHECK_SVG));
   return `<!doctype html>
