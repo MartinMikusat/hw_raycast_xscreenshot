@@ -13,9 +13,9 @@ const SCALE = 2;
 const LINK_BLUE = [0.114, 0.608, 0.941];
 
 const THEMES = {
-  dark: { bg: "000000", fg: "e7e9ea", sec: "71767b", border: "2f3336", back: ["1a1a2e", "2d1b4e"], base: [12, 12, 20], mix: 0.55 },
-  dim: { bg: "15202b", fg: "f7f9f9", sec: "8b98a5", border: "38444d", back: ["10253f", "1f3a5f"], base: [12, 12, 20], mix: 0.55 },
-  light: { bg: "ffffff", fg: "0f1419", sec: "536471", border: "eff3f4", back: ["dbe6fd", "f2e3f8"], base: [255, 255, 255], mix: 0.45 },
+  dark: { bg: "000000", fg: "e7e9ea", sec: "71767b", border: "2f3336", back: ["1c1c1f", "2c2c31"], base: [12, 12, 20], mix: 0.55 },
+  dim: { bg: "15202b", fg: "f7f9f9", sec: "8b98a5", border: "38444d", back: ["1a2330", "2a3a4d"], base: [12, 12, 20], mix: 0.55 },
+  light: { bg: "ffffff", fg: "0f1419", sec: "536471", border: "eff3f4", back: ["e6e9ef", "f4f5f8"], base: [255, 255, 255], mix: 0.45 },
 };
 
 function rgbColor(r, g, b, a) {
@@ -311,8 +311,7 @@ function run(argv) {
   }
 
   function samplePalette() {
-    const buckets = [];
-    for (let k = 0; k < 12; k++) buckets.push({ w: 0, r: 0, g: 0, b: 0 });
+    const pixels = [];
     const paths = [];
     (function collect(p) {
       if (p.avatarPath) paths.push(p.avatarPath);
@@ -334,22 +333,31 @@ function run(argv) {
       for (let py = 0; py < N; py++) {
         for (let px = 0; px < N; px++) {
           const c = rep.colorAtXY(px, py);
-          const r = c.redComponent, g = c.greenComponent, b = c.blueComponent;
-          const mx = Math.max(r, g, b), dl = mx - Math.min(r, g, b);
-          const sat = mx ? dl / mx : 0;
-          if (c.alphaComponent < 0.8 || mx < 0.3 || sat < 0.25) continue;
-          const h = mx === r ? ((g - b) / dl + 6) % 6 : mx === g ? (b - r) / dl + 2 : (r - g) / dl + 4;
-          const bk = buckets[Math.floor(h * 2) % 12];
-          const w = sat * mx;
-          bk.w += w; bk.r += r * w; bk.g += g * w; bk.b += b * w;
+          if (c.alphaComponent >= 0.8) pixels.push([c.redComponent, c.greenComponent, c.blueComponent]);
         }
       }
     });
-    return buckets
-      .filter((b) => b.w > 0)
-      .sort((a, b) => b.w - a.w)
-      .slice(0, 3)
-      .map((b) => [(b.r / b.w) * 255, (b.g / b.w) * 255, (b.b / b.w) * 255]);
+    // Strict pass picks vivid colours; the relaxed pass rescues dark, muted content.
+    for (const [minV, minS] of [[0.3, 0.25], [0.1, 0.1]]) {
+      const buckets = [];
+      for (let k = 0; k < 12; k++) buckets.push({ w: 0, r: 0, g: 0, b: 0 });
+      pixels.forEach(([r, g, b]) => {
+        const mx = Math.max(r, g, b), dl = mx - Math.min(r, g, b);
+        const sat = mx ? dl / mx : 0;
+        if (mx < minV || sat < minS) return;
+        const h = mx === r ? ((g - b) / dl + 6) % 6 : mx === g ? (b - r) / dl + 2 : (r - g) / dl + 4;
+        const bk = buckets[Math.floor(h * 2) % 12];
+        const w = sat * mx;
+        bk.w += w; bk.r += r * w; bk.g += g * w; bk.b += b * w;
+      });
+      const top = buckets
+        .filter((b) => b.w > 0)
+        .sort((a, b) => b.w - a.w)
+        .slice(0, 3)
+        .map((b) => [(b.r / b.w) * 255, (b.g / b.w) * 255, (b.b / b.w) * 255]);
+      if (top.length) return top;
+    }
+    return [];
   }
 
   function backdropColors() {
