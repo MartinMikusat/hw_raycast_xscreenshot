@@ -13,7 +13,7 @@ const SCALE = 2;
 const LINK_BLUE = [0.114, 0.608, 0.941];
 
 const THEMES = {
-  dark: { bg: "000000", fg: "e7e9ea", sec: "71767b", border: "2f3336", back: ["1c1c1f", "2c2c31"], base: [12, 12, 20], mix: 0.55 },
+  dark: { bg: "000000", fg: "e7e9ea", sec: "71767b", border: "2f3336", back: ["000000", "000000"], base: [12, 12, 20], mix: 0.55 },
   dim: { bg: "15202b", fg: "f7f9f9", sec: "8b98a5", border: "38444d", back: ["1a2330", "2a3a4d"], base: [12, 12, 20], mix: 0.55 },
   light: { bg: "ffffff", fg: "0f1419", sec: "536471", border: "eff3f4", back: ["e6e9ef", "f4f5f8"], base: [255, 255, 255], mix: 0.45 },
 };
@@ -337,8 +337,8 @@ function run(argv) {
         }
       }
     });
-    // Strict pass picks vivid colours; the relaxed pass rescues dark, muted content.
-    for (const [minV, minS] of [[0.3, 0.25], [0.1, 0.1]]) {
+    {
+      const [minV, minS] = [0.3, 0.25];
       const buckets = [];
       for (let k = 0; k < 12; k++) buckets.push({ w: 0, r: 0, g: 0, b: 0 });
       pixels.forEach(([r, g, b]) => {
@@ -355,14 +355,20 @@ function run(argv) {
         .sort((a, b) => b.w - a.w)
         .slice(0, 3)
         .map((b) => [(b.r / b.w) * 255, (b.g / b.w) * 255, (b.b / b.w) * 255]);
-      if (top.length) return top;
+      if (top.length) return { colors: top, vivid: true };
     }
-    return [];
+    if (!pixels.length) return { colors: [], vivid: false };
+    const mean = [0, 1, 2].map((n) => (pixels.reduce((a, p) => a + p[n], 0) / pixels.length) * 255);
+    return { colors: [mean], vivid: false };
   }
 
   function backdropColors() {
-    const colors = samplePalette();
+    const { colors, vivid } = samplePalette();
     if (!colors.length) return theme.back.map((h) => hexColor(h));
+    if (!vivid) {
+      const c = rgbColor.apply(null, colors[0].map((v) => v / 255));
+      return [c, c];
+    }
     const t = theme.mix;
     const mixed = colors.map((c) => rgbColor.apply(null, c.map((v, n) => (v * t + theme.base[n] * (1 - t)) / 255)));
     if (mixed.length === 1) mixed.push(mixed[0]);
