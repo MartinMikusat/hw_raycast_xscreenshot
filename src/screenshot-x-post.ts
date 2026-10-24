@@ -21,6 +21,12 @@ const COPY_IMAGE = [
   "end run",
 ];
 
+function timestamp(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+}
+
 export default async function main() {
   const { theme, saveFolder } = getPreferenceValues<Preferences>();
 
@@ -42,7 +48,7 @@ export default async function main() {
     });
 
     const folder = screenshotFolder(saveFolder);
-    const file = join(folder, `hw_raycast_xscreenshot_${handle}_${id}.png`);
+    const file = join(folder, `hw_raycast_xscreenshot_${timestamp()}_${handle}_${id}.png`);
     await mkdir(folder, { recursive: true });
     await writeFile(file, png);
     await run("osascript", [...COPY_IMAGE, file]);

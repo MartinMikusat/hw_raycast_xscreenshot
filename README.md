@@ -4,7 +4,7 @@ A Raycast extension that turns the X (Twitter) post in your active browser tab i
 
 1. Open a post, for example `https://x.com/<user>/status/<id>`, in any browser with the Raycast browser extension installed.
 2. Run **Screenshot X Post** in Raycast.
-3. Paste the image anywhere. Each screenshot is also saved as `hw_raycast_xscreenshot_<handle>_<id>.png` in `~/Pictures/hw_raycast_xscreenshot` (change it with the Save Folder preference). Run **Open X Screenshot Folder** to browse them, or find them with Raycast's Search Files.
+3. Paste the image anywhere. Each screenshot is also saved as `hw_raycast_xscreenshot_<YYYY-MM-DD_HH-MM-SS>_<handle>_<id>.png` in `~/Pictures/hw_raycast_xscreenshot` (change it with the Save Folder preference). Run **Open X Screenshot Folder** to browse them, or find them with Raycast's Search Files.
 
 The post's HTML is read from the page, parsed locally and rendered as a card (including a quoted post and the posts it replies to) (dark, dim or light) with a native WebKit renderer. Nothing leaves your machine.
 
