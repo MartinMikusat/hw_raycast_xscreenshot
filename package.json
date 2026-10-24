@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "x-screenshot",
+  "name": "hw_raycast_xscreenshot",
   "title": "X Post Screenshot",
   "description": "Turn the X (Twitter) post in your active browser tab into a clean screenshot on the clipboard.",
   "icon": "icon.png",
