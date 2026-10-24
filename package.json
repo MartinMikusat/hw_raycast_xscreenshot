@@ -4,7 +4,7 @@
   "title": "X Post Screenshot",
   "description": "Turn the X (Twitter) post in your active browser tab into a clean screenshot image on your clipboard.",
   "icon": "icon.png",
-  "author": "martin",
+  "author": "martin_mikusat",
   "platforms": [
     "macOS"
   ],
