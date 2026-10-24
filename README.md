@@ -13,12 +13,29 @@ The post's HTML is read from the page, parsed locally and rendered as a card (in
 - macOS, Raycast, and the [Raycast browser extension](https://www.raycast.com/browser-extension)
 - Xcode Command Line Tools (`xcode-select --install`): the small renderer in `assets/render.swift` is compiled once on first use
 
-## Development
+## Install
+
+This extension is not in the Raycast Store. Install it as a local extension:
 
 ```sh
+git clone https://github.com/MartinMikusat/hw_raycast_xscreenshot.git
+cd hw_raycast_xscreenshot
 npm install
 npm run dev
 ```
+
+`npm run dev` imports the extension into Raycast and keeps rebuilding while it runs. After the import you can stop it with Ctrl+C and the extension stays installed.
+
+## Preferences
+
+- **Theme:** dark, dim or light card.
+- **After Capture:** close the launcher when done, or stay open with a Show in Finder action.
+- **Save Folder:** where PNGs go (default `~/Pictures/hw_raycast_xscreenshot`).
+
+## Known limits
+
+- Only the first four media items of a post are shown, and at most four earlier posts of a thread.
+- X changes its page markup often. If a post renders wrong, open an issue with the post URL.
 
 ## License
 
