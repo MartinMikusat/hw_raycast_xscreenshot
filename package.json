@@ -1,0 +1,53 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "x-screenshot",
+  "title": "X Post Screenshot",
+  "description": "Turn the X (Twitter) post in your active browser tab into a clean screenshot on the clipboard.",
+  "icon": "icon.png",
+  "author": "martin",
+  "license": "MIT",
+  "scripts": {
+    "dev": "ray develop",
+    "build": "ray build",
+    "typecheck": "tsc --noEmit",
+    "check-render": "node scripts/check-render.mjs"
+  },
+  "commands": [
+    {
+      "name": "screenshot-x-post",
+      "title": "Screenshot X Post",
+      "description": "Render the X post in the active browser tab as an image and copy it to the clipboard",
+      "mode": "no-view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "theme",
+      "title": "Theme",
+      "description": "Colors of the rendered post card",
+      "type": "dropdown",
+      "required": false,
+      "default": "dark",
+      "data": [
+        { "title": "Dark", "value": "dark" },
+        { "title": "Dim", "value": "dim" },
+        { "title": "Light", "value": "light" }
+      ]
+    },
+    {
+      "name": "saveFolder",
+      "title": "Save Folder",
+      "description": "Also save each screenshot as a PNG here; empty keeps it on the clipboard only",
+      "type": "directory",
+      "required": false
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
