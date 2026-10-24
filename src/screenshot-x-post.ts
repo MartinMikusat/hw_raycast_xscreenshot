@@ -3,11 +3,18 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { promisify } from "node:util";
 
-import { BrowserExtension, Toast, environment, getPreferenceValues, showHUD, showInFinder, showToast } from "@raycast/api";
+import {
+  BrowserExtension,
+  Toast,
+  environment,
+  getPreferenceValues,
+  showHUD,
+  showInFinder,
+  showToast,
+} from "@raycast/api";
 
 import { screenshotFolder } from "./folder.ts";
-import type { Theme } from "./card-page.ts";
-import { renderPost } from "./capture.ts";
+import { renderPost, type Theme } from "./render.ts";
 
 const run = promisify(execFile);
 
@@ -44,13 +51,7 @@ export default async function main() {
     if (!html.includes("<article")) throw new Error("No post found on the page yet. Wait for it to load.");
 
     toast.title = "Rendering screenshot";
-    const png = await renderPost(html, theme as Theme, { id }, {
-      source: join(environment.assetsPath, "render.swift"),
-      cacheDir: environment.supportPath,
-      onCompile: () => {
-        toast.title = "Preparing renderer (first run only)";
-      },
-    });
+    const png = await renderPost(html, theme as Theme, id, join(environment.assetsPath, "render.js"));
 
     toast.title = "Saving screenshot";
     const folder = screenshotFolder(saveFolder);

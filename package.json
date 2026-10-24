@@ -1,16 +1,35 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "hw_raycast_xscreenshot",
+  "name": "hw-xscreenshot",
   "title": "X Post Screenshot",
-  "description": "Turn the X (Twitter) post in your active browser tab into a clean screenshot on the clipboard.",
+  "description": "Turn the X (Twitter) post in your active browser tab into a clean screenshot image on your clipboard.",
   "icon": "icon.png",
   "author": "martin",
+  "platforms": [
+    "macOS"
+  ],
+  "categories": [
+    "Media",
+    "Web"
+  ],
+  "keywords": [
+    "x",
+    "twitter",
+    "tweet",
+    "post",
+    "screenshot",
+    "image",
+    "capture"
+  ],
   "license": "MIT",
   "scripts": {
     "dev": "ray develop",
     "build": "ray build",
     "typecheck": "tsc --noEmit",
-    "check-render": "node scripts/check-render.mjs"
+    "check-render": "node scripts/check-render.mjs",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix",
+    "publish": "npx @raycast/api@latest publish"
   },
   "commands": [
     {
@@ -67,11 +86,15 @@
     }
   ],
   "dependencies": {
-    "@raycast/api": "^2.8.2"
+    "@raycast/api": "^2.8.2",
+    "node-html-parser": "^9.0.5"
   },
   "devDependencies": {
+    "@raycast/eslint-config": "^2.2.0",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
-    "typescript": "^7.0.2"
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3"
   }
 }

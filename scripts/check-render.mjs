@@ -3,12 +3,9 @@ import { readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { renderPost } from "../src/capture.ts";
+import { renderPost } from "../src/render.ts";
 
-const renderer = {
-  source: fileURLToPath(new URL("../assets/render.swift", import.meta.url)),
-  cacheDir: join(tmpdir(), "hw_raycast_xscreenshot-check-cache"),
-};
+const script = fileURLToPath(new URL("../assets/render.js", import.meta.url));
 
 const cases = [
   { name: "post", id: "2113453507793592715", theme: "dark", minHeight: 300 },
@@ -19,10 +16,10 @@ const cases = [
 
 for (const { name, id, theme, minHeight } of cases) {
   const html = await readFile(new URL(`../fixtures/${name}.html`, import.meta.url), "utf8");
-  const png = await renderPost(html, theme, { id }, renderer);
+  const png = await renderPost(html, theme, id, script);
   assert.equal(png.subarray(1, 4).toString(), "PNG", "not a PNG");
   const [width, height] = [png.readUInt32BE(16), png.readUInt32BE(20)];
-  assert.ok(width >= 656, `${name}: unexpected width ${width}`);
+  assert.equal(width, 656 * 2, `${name}: unexpected width ${width}`);
   assert.ok(height > minHeight, `${name}: card too short: ${height}`);
   const out = join(tmpdir(), `hw_raycast_xscreenshot-check-${name}-${theme}.png`);
   await writeFile(out, png);
