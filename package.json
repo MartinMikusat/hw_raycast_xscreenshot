@@ -50,6 +50,15 @@
       ]
     },
     {
+      "name": "closeOnSuccess",
+      "label": "Close the launcher when the screenshot is done",
+      "title": "After Capture",
+      "description": "Off keeps Raycast open and shows a result toast with a Show in Finder action",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
       "name": "saveFolder",
       "title": "Save Folder",
       "description": "Where screenshots are saved as PNG; empty uses Pictures/hw_raycast_xscreenshot",

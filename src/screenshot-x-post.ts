@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { promisify } from "node:util";
 
-import { BrowserExtension, Toast, environment, getPreferenceValues, showHUD, showToast } from "@raycast/api";
+import { BrowserExtension, Toast, environment, getPreferenceValues, showHUD, showInFinder, showToast } from "@raycast/api";
 
 import { screenshotFolder } from "./folder.ts";
 import type { Theme } from "./card-page.ts";
@@ -28,7 +28,7 @@ function timestamp(): string {
 }
 
 export default async function main() {
-  const { theme, saveFolder } = getPreferenceValues<Preferences>();
+  const { theme, saveFolder, closeOnSuccess } = getPreferenceValues<Preferences>();
   const toast = await showToast({ style: Toast.Style.Animated, title: "Reading X post" });
 
   try {
@@ -59,7 +59,14 @@ export default async function main() {
     await writeFile(file, png);
     await run("osascript", [...COPY_IMAGE, file]);
 
-    await showHUD(`Screenshot copied - saved in ${basename(folder)}`);
+    if (closeOnSuccess) {
+      await showHUD(`Screenshot copied - saved in ${basename(folder)}`);
+    } else {
+      toast.style = Toast.Style.Success;
+      toast.title = "Screenshot copied";
+      toast.message = `Saved in ${basename(folder)}`;
+      toast.primaryAction = { title: "Show in Finder", onAction: () => showInFinder(file) };
+    }
   } catch (error) {
     toast.style = Toast.Style.Failure;
     toast.title = "Screenshot failed";
