@@ -42,7 +42,7 @@ export default async function main() {
     });
 
     const folder = screenshotFolder(saveFolder);
-    const file = join(folder, `x-${handle}-${id}.png`);
+    const file = join(folder, `hw_raycast_xscreenshot_${handle}_${id}.png`);
     await mkdir(folder, { recursive: true });
     await writeFile(file, png);
     await run("osascript", [...COPY_IMAGE, file]);

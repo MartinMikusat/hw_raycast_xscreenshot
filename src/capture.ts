@@ -40,7 +40,7 @@ async function compiled({ source, cacheDir }: Renderer): Promise<string> {
 
 export async function renderPost(pageHtml: string, theme: Theme, focal: FocalPost, renderer: Renderer): Promise<Buffer> {
   const binary = await compiled(renderer);
-  const dir = await mkdtemp(join(tmpdir(), "x-screenshot-"));
+  const dir = await mkdtemp(join(tmpdir(), "hw_raycast_xscreenshot-"));
   try {
     const page = join(dir, "card.html");
     const png = join(dir, "card.png");

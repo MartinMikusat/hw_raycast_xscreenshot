@@ -52,7 +52,7 @@
     {
       "name": "saveFolder",
       "title": "Save Folder",
-      "description": "Where screenshots are saved as PNG; empty uses Pictures/X Post Screenshots",
+      "description": "Where screenshots are saved as PNG; empty uses Pictures/hw_raycast_xscreenshot",
       "type": "directory",
       "required": false
     }

@@ -7,7 +7,7 @@ import { renderPost } from "../src/capture.ts";
 
 const renderer = {
   source: fileURLToPath(new URL("../assets/render.swift", import.meta.url)),
-  cacheDir: join(tmpdir(), "x-screenshot-check-cache"),
+  cacheDir: join(tmpdir(), "hw_raycast_xscreenshot-check-cache"),
 };
 
 const cases = [
@@ -24,7 +24,7 @@ for (const { name, id, theme, minHeight } of cases) {
   const [width, height] = [png.readUInt32BE(16), png.readUInt32BE(20)];
   assert.ok(width >= 656, `${name}: unexpected width ${width}`);
   assert.ok(height > minHeight, `${name}: card too short: ${height}`);
-  const out = join(tmpdir(), `x-screenshot-check-${name}-${theme}.png`);
+  const out = join(tmpdir(), `hw_raycast_xscreenshot-check-${name}-${theme}.png`);
   await writeFile(out, png);
   console.log(`OK - ${name}/${theme}: ${width}x${height} ${out}`);
 }
